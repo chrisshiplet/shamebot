@@ -21,7 +21,7 @@ slackbot.on('message', data => {
       .then(() => {
         return slackbot.postMessage(data.channel, data.previous_message.text, {
           link_names: true,
-          username: user.name,
+          username: user.profile.real_name,
           icon_url: user.profile.image_72,
         });
       });

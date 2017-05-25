@@ -4,28 +4,64 @@ var slackbot = new Slack({
   token: process.env.SLACK_TOKEN,
 });
 
+var messages = [];
+
 slackbot.on('message', data => {
-  if (data.subtype === 'message_deleted') {
+  if (!data.hidden) {
+    messages.push(data);
+    if (messages.length > 1000) {
+      messages.shift();
+    }
+  }
+  if (data.subtype === 'message_changed') {
+    slackbot.getUsers()
+      .then(users => {
+        var i = messages.findIndex(message => message.ts === data.message.ts);
+        var user = users.members.find(user => user.id === data.message.edited.user);
+
+        if (i > -1) {
+          var params = {
+            as_user: true,
+            link_names: true,
+            attachments: data.previous_message.attachments || [],
+          }
+          if (data.previous_message.thread_ts) {
+            params.thread_ts = data.previous_message.thread_ts;
+          }
+          var nextMessage = `@${user.name}: your message unexpectedly changed from "${messages[i].text}" to "${data.message.text}"`;
+          messages[i] = data.message;
+          return slackbot.postMessage(data.channel, nextMessage, params);
+        }
+      });
+  } else if (data.subtype === 'message_deleted') {
     var user = {};
     slackbot.getUsers()
       .then(users => {
         user = users.members.find(user => user.id === data.previous_message.user);
       })
       .then(() => {
-        return slackbot.postMessage(data.channel, `@${user.name}: you appear to have accidentally removed this...`, {
+        var params = {
           as_user: true,
           parse: 'full',
           link_names: true,
-        });
+        };
+        if (data.previous_message.thread_ts) {
+          params.thread_ts = data.previous_message.thread_ts;
+        }
+        return slackbot.postMessage(data.channel, `@${user.name}: you appear to have accidentally removed this...`, params);
       })
       .then(() => {
-        return slackbot.postMessage(data.channel, data.previous_message.text, {
+        var params = {
           link_names: true,
           username: user.profile.real_name,
           icon_url: user.profile.image_72,
-        });
+          attachments: data.previous_message.attachments || [],
+        };
+        if (data.previous_message.thread_ts) {
+          params.thread_ts = data.previous_message.thread_ts;
+        }
+        return slackbot.postMessage(data.channel, data.previous_message.text, params);
       });
-    console.log(data);
   }
 });
 

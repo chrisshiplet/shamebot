@@ -6,6 +6,12 @@ var slackbot = new Slack({
 
 var messages = [];
 
+var shameChannelId;
+
+slackbot.getChannelId('so-shame').then(channelId => {
+  shameChannelId = channelId;
+});
+
 slackbot.on('message', data => {
   if (!data.hidden) {
     messages.push(data);
@@ -14,28 +20,30 @@ slackbot.on('message', data => {
     }
   }
   if (data.subtype === 'message_changed') {
-    slackbot.getUsers()
-      .then(users => {
-        var i = messages.findIndex(message => message.ts === data.message.ts);
-        var user = users.members.find(user => user.id === data.message.edited.user);
+    slackbot.getUsers().then(users => {
+      var i = messages.findIndex(message => message.ts === data.message.ts);
+      var user = users.members.find(user => user.id === data.message.edited.user);
 
-        if (i > -1) {
-          var params = {
-            as_user: true,
-            link_names: true,
-            attachments: data.previous_message.attachments || [],
-          }
-          if (data.previous_message.thread_ts) {
-            params.thread_ts = data.previous_message.thread_ts;
-          }
-          var nextMessage = `@${user.name}: your message unexpectedly changed from "${messages[i].text}" to "${data.message.text}"`;
-          messages[i] = data.message;
-          return slackbot.postMessage(slackbot.getChannelId('so-shame'), nextMessage, params);
+      if (i > -1) {
+        var params = {
+          as_user: true,
+          link_names: true,
+          attachments: data.previous_message.attachments || [],
+        };
+        if (data.previous_message.thread_ts) {
+          params.thread_ts = data.previous_message.thread_ts;
         }
-      });
+        var nextMessage = `@${user.name}: your message unexpectedly changed from "${messages[i].text}" to "${
+          data.message.text
+        }"`;
+        messages[i] = data.message;
+        return slackbot.postMessage(shameChannelId, nextMessage, params);
+      }
+    });
   } else if (data.subtype === 'message_deleted') {
     var user = {};
-    slackbot.getUsers()
+    slackbot
+      .getUsers()
       .then(users => {
         user = users.members.find(user => user.id === data.previous_message.user);
       })
@@ -48,7 +56,11 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        return slackbot.postMessage(slackbot.getChannelId('so-shame'), `@${user.name}: you appear to have accidentally removed this...`, params);
+        return slackbot.postMessage(
+          shameChannelId,
+          `@${user.name}: you appear to have accidentally removed this...`,
+          params
+        );
       })
       .then(() => {
         var params = {
@@ -60,7 +72,7 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        return slackbot.postMessage(slackbot.getChannelId('so-shame'), data.previous_message.text, params);
+        return slackbot.postMessage(shameChannelId, data.previous_message.text, params);
       });
   }
 });

@@ -8,9 +8,12 @@ var messages = [];
 
 var shameChannelId;
 
-slackbot.getChannelId('so-shame').then(channelId => {
-  shameChannelId = channelId;
-});
+slackbot
+  .getChannelId('so-shame')
+  .then(channelId => {
+    shameChannelId = channelId;
+  })
+  .catch(err => console.log(err));
 
 slackbot.on('message', data => {
   if (!data.hidden) {

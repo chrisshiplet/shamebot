@@ -30,7 +30,7 @@ slackbot.on('message', data => {
           }
           var nextMessage = `@${user.name}: your message unexpectedly changed from "${messages[i].text}" to "${data.message.text}"`;
           messages[i] = data.message;
-          return slackbot.postMessage(data.channel, nextMessage, params);
+          return slackbot.postMessage(slackbot.getChannelId('so-shame'), nextMessage, params);
         }
       });
   } else if (data.subtype === 'message_deleted') {
@@ -48,7 +48,7 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        return slackbot.postMessage(data.channel, `@${user.name}: you appear to have accidentally removed this...`, params);
+        return slackbot.postMessage(slackbot.getChannelId('so-shame'), `@${user.name}: you appear to have accidentally removed this...`, params);
       })
       .then(() => {
         var params = {
@@ -60,7 +60,7 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        return slackbot.postMessage(data.channel, data.previous_message.text, params);
+        return slackbot.postMessage(slackbot.getChannelId('so-shame'), data.previous_message.text, params);
       });
   }
 });

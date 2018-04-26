@@ -36,7 +36,7 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        var nextMessage = `@${user.name}: your message unexpectedly changed from "${messages[i].text}" to "${
+        var nextMessage = `\`${user.name}\`'s message unexpectedly changed from "${messages[i].text}" to "${
           data.message.text
         }"`;
         messages[i] = data.message;
@@ -59,11 +59,7 @@ slackbot.on('message', data => {
         if (data.previous_message.thread_ts) {
           params.thread_ts = data.previous_message.thread_ts;
         }
-        return slackbot.postMessage(
-          shameChannelId,
-          `@${user.name}: you appear to have accidentally removed this...`,
-          params
-        );
+        return slackbot.postMessage(shameChannelId, `\`${user.name}\` removed their message:`, params);
       })
       .then(() => {
         var params = {
